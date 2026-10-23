@@ -9,5 +9,5 @@ const vote=old||{id,who:who.trim(),sex:null,names:[],weight:null,createdAt:new D
 if(sex!==undefined){if(!['Fille','Garçon'].includes(sex))return error(res,400,'Sexe invalide');if(vote.sex)return error(res,409,'Sexe déjà enregistré');vote.sex=sex}
 if(name!==undefined){if(typeof name!=='string'||!/^\p{L}[\p{L}\s’'-]{0,29}$/u.test(name.trim()))return error(res,400,'Prénom invalide');if(vote.names.some(n=>n.toLocaleLowerCase('fr')===name.trim().toLocaleLowerCase('fr')))return error(res,409,'Prénom déjà proposé');if(vote.names.length>=5)return error(res,400,'Maximum 5 prénoms');vote.names.push(name.trim())}
 if(weight!==undefined){if(!Number.isInteger(weight)||weight<1000||weight>6000)return error(res,400,'Poids invalide');vote.weight=weight}
-vote.updatedAt=new Date().toISOString();await writeOne(vote);const allVotes=await readAll();return res.status(200).json({mine:vote,stats:stats(allVotes)})
+vote.updatedAt=new Date().toISOString();await writeOne(vote);const allVotes=await readAll();const current=allVotes.findIndex(v=>v.id===vote.id);if(current>=0)allVotes[current]=vote;else allVotes.push(vote);return res.status(200).json({mine:vote,stats:stats(allVotes)})
 }catch(e){console.error(e);return error(res,500,'Erreur de stockage. Consultez les logs Vercel.')}}

@@ -46,3 +46,9 @@ Correction : le bulletin final est maintenant affiché et centré automatiquemen
 
 ## Correctif affichage immediat
 Le prenom, le poids et le bulletin final se mettent a jour immediatement apres confirmation de l API. Les chargements plus anciens ne peuvent plus ecraser les nouveaux votes.
+
+
+## Mise à jour : affichage immédiat et nouvelle partie
+- Les réponses confirmées restent affichées lors du rafraîchissement des statistiques.
+- Le bulletin final propose « Rejouer avec un autre participant ». Chaque nouvelle partie reçoit un nouvel identifiant ; les anciennes réponses restent enregistrées.
+- Pour éviter les doublons dans le pilotage, ne pas rejouer avec le même nom pour simuler une autre personne.
