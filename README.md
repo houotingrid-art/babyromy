@@ -60,3 +60,10 @@ Les prénoms, le poids et le bulletin Sherlock sont maintenant affichés dès le
 
 ## Correctif Sherlock
 Après la sauvegarde réussie du poids, une fenêtre Bravo Sherlock apparaît immédiatement avec le récapitulatif et le bouton Rejouer. Le récapitulatif reste aussi présent sur la page.
+
+## Question sur le terme
+Après la validation du poids, une question sur la connaissance du terme apparaît. Répondre « aucune idée » attribue automatiquement le troisième prix (changement de couche). La réponse est enregistrée dans Blob, visible au pilotage et dans l’export CSV.
+
+
+## Question du terme
+Après le poids, le participant doit saisir une date. Le 1er janvier 2027 est la bonne réponse. Une autre date déclenche le 3e prix automatique, et la date est enregistrée dans Blob et visible dans Pilotage.

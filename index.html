@@ -171,7 +171,7 @@ header{position:sticky;top:0;z-index:60;background:#f3eee5!important;isolation:i
 .clue-highlight{margin:24px 0 18px;max-width:650px;padding:20px 22px;border:1px dashed #b45b6c;border-radius:12px;background:#f7eae5;text-align:center}
 .clue-highlight p{font:italic 22px Georgia,serif;color:#76243d;margin:0 0 12px}
 #gameTicket[hidden]{display:none!important}
-</style><style>.bath-note{max-width:620px;margin:12px auto 28px;padding:0 16px;text-align:center;color:#8c5d62;font-family:Georgia,serif;font-style:italic;font-size:clamp(12px,1.2vw,15px);line-height:1.55;letter-spacing:.01em;}</style><style>.replay-button{display:inline-block;margin:12px auto 0;padding:12px 20px;border:1px solid #8b3045;border-radius:5px;background:transparent;color:#8b3045;font:600 14px Arial,sans-serif;cursor:pointer;transition:background .2s}.replay-button:hover{background:#f2e3e0}.game-ticket[hidden]{display:none!important}</style><style id="sherlock-confirmation-fix">
+</style><style>.term-prize{background:#f4e4d7;color:#80263f;border:1px dashed #8b253d;border-radius:9px;padding:14px;margin:16px 0;font-weight:bold}.term-small{font:italic 13px Georgia,serif;color:#8b6470;margin-top:16px}.bath-note{max-width:620px;margin:12px auto 28px;padding:0 16px;text-align:center;color:#8c5d62;font-family:Georgia,serif;font-style:italic;font-size:clamp(12px,1.2vw,15px);line-height:1.55;letter-spacing:.01em;}</style><style>.replay-button{display:inline-block;margin:12px auto 0;padding:12px 20px;border:1px solid #8b3045;border-radius:5px;background:transparent;color:#8b3045;font:600 14px Arial,sans-serif;cursor:pointer;transition:background .2s}.replay-button:hover{background:#f2e3e0}.game-ticket[hidden]{display:none!important}</style><style id="sherlock-confirmation-fix">
 .sherlock-confirmation{position:fixed;inset:0;z-index:99998;background:rgba(39,23,28,.65);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
 .sherlock-confirmation-card{box-sizing:border-box;width:min(540px,100%);background:#f8f2e9;border:2px solid #8b253d;border-radius:13px;padding:clamp(24px,5vw,48px);text-align:center;box-shadow:0 18px 60px #24161b55;color:#67283b}
 .sherlock-confirmation-card .sherlock-eyebrow{font:11px Arial,sans-serif;letter-spacing:.2em;color:#8b253d}
@@ -190,7 +190,7 @@ const idKey=KEY+'-participant-id';
 let participantId=localStorage.getItem(idKey);
 if(!participantId){participantId=crypto.randomUUID();localStorage.setItem(idKey,participantId)}
 let identity=localStorage.getItem(KEY+'-identity')||'';
-let data={sex:[],names:[],weights:[]},myVote={sex:null,names:[],weight:null};
+let data={sex:[],names:[],weights:[]},myVote={sex:null,names:[],weight:null,termUnknown:null,termDate:null};
 let saving=false;
 let toastTimer;function toast(msg){const el=$('toast');el.textContent=msg;el.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.display='none',9000)}
 function updateGate(){document.body.classList.toggle('locked',!identity);$('identityStatus').textContent=identity?'Bienvenue '+identity+' ! Vos paris sont ouverts.':'';if(identity)$('identityName').value=identity;}
@@ -218,7 +218,7 @@ async function loadVotes({quiet=false}={}){
   const j=await res.json();if(!res.ok)throw Error(j.error||'Erreur serveur');
   if(!validStats(j.stats))throw Error('Réponse de statistiques invalide');
   if(revision!==voteRevision || saving)return false;
-  if(j.mine){myVote={sex:j.mine.sex||null,names:j.mine.names||[],weight:j.mine.weight||null,who:j.mine.who};identity=j.mine.who||identity;localStorage.setItem(KEY+'-identity',identity);updateGate()}
+  if(j.mine){myVote={sex:j.mine.sex||null,names:j.mine.names||[],weight:j.mine.weight||null,termUnknown:j.mine.termUnknown??null,termDate:j.mine.termDate??null,who:j.mine.who};identity=j.mine.who||identity;localStorage.setItem(KEY+'-identity',identity);updateGate()}
   // Ne jamais effacer visuellement une proposition confirmée à cause d'une lecture Blob retardée.
   data=ensureOwnVoteInStats(j.stats,{sex:null,names:[],weight:null},myVote);
   refresh();return true;
@@ -227,13 +227,14 @@ async function loadVotes({quiet=false}={}){
 async function submitVote(patch){
  if(saving)return false;
  saving=true;voteRevision++;
- const previous={sex:myVote.sex,names:[...(myVote.names||[])],weight:myVote.weight,who:myVote.who};
+ const previous={sex:myVote.sex,names:[...(myVote.names||[])],weight:myVote.weight,termUnknown:myVote.termUnknown,termDate:myVote.termDate,who:myVote.who};
  const previousData={sex:[...data.sex],names:[...data.names],weights:[...data.weights]};
  // Affichage optimiste immédiat, sans attendre le réseau.
  myVote={...myVote,names:[...(myVote.names||[])],who:identity};
  if(patch.sex)myVote.sex=patch.sex;
  if(patch.name)myVote.names.push(patch.name);
  if(patch.weight)myVote.weight=patch.weight;
+ if(typeof patch.termUnknown==='boolean')myVote.termUnknown=patch.termUnknown; if(typeof patch.termDate==='string')myVote.termDate=patch.termDate;
  data=ensureOwnVoteInStats(previousData,previous,myVote);
  refresh();
  if(patch.weight && myVote.sex && myVote.names.length){
@@ -242,7 +243,7 @@ async function submitVote(patch){
  try{
   const res=await fetch('/api/votes',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({id:participantId,who:identity,...patch})});
   const j=await res.json();if(!res.ok)throw Error(j.error||'Échec de sauvegarde');if(!j.mine)throw Error('Réponse de sauvegarde invalide');
-  myVote={sex:j.mine.sex||null,names:j.mine.names||[],weight:j.mine.weight||null,who:j.mine.who};
+  myVote={sex:j.mine.sex||null,names:j.mine.names||[],weight:j.mine.weight||null,termUnknown:j.mine.termUnknown??null,termDate:j.mine.termDate??null,who:j.mine.who};
   // Réponse serveur prioritaire, en y ajoutant le vote confirmé si la liste est en retard.
   if(validStats(j.stats))data=ensureOwnVoteInStats(j.stats,previous,myVote);
   refresh();toast('Pronostic bien enregistré !');
@@ -258,7 +259,7 @@ window.addEventListener('start-new-game',()=>{
  // Nouvelle participation : les votes précédents restent conservés dans Blob.
  participantId=crypto.randomUUID();localStorage.setItem(idKey,participantId);
  identity='';localStorage.removeItem(KEY+'-identity');
- myVote={sex:null,names:[],weight:null};selected=null;
+ myVote={sex:null,names:[],weight:null,termUnknown:null,termDate:null};selected=null;
  document.querySelectorAll('[data-sex]').forEach(b=>b.classList.remove('selected'));
  $('identityName').value='';$('nameInput').value='';$('weight').value='';
  voteRevision++;updateGate();refresh();
@@ -276,17 +277,30 @@ $('addName').onclick=async()=>{if(!identity)return toast('Présentez-vous d’ab
 $('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('addName').click()});
 $('addWeight').onclick=async()=>{if(!identity)return toast('Présentez-vous d’abord !');const weight=Number($('weight').value);if(!Number.isInteger(weight)||weight<1000||weight>6000)return toast('Indiquez un poids entre 1 000 et 6 000 g.');if(await submitVote({weight})){
   $('weight').value='';
-  // Le dernier pronostic déclenche immédiatement le bulletin final.
-  window.dispatchEvent(new Event('votes-updated'));
-  if(myVote.sex && Array.isArray(myVote.names) && myVote.names.length && myVote.weight){
-    showSherlockConfirmation();
-    const ticket=document.getElementById('gameTicket');
-    if(ticket){
-      ticket.hidden=false;
-      requestAnimationFrame(()=>requestAnimationFrame(()=>ticket.scrollIntoView({behavior:'smooth',block:'center'})));
-    }
+  if(myVote.sex && myVote.names?.length){
+    if(myVote.termUnknown===null || myVote.termUnknown===undefined)showTermQuestion();
+    else showSherlockConfirmation();
   }
 }};
+function showTermQuestion(){
+ let modal=document.getElementById('termQuestion');
+ if(!modal){modal=document.createElement('div');modal.id='termQuestion';modal.className='sherlock-confirmation';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');document.body.append(modal)}
+ modal.innerHTML=`<section class="sherlock-confirmation-card"><p class="sherlock-eyebrow">UNE TOUTE DERNIÈRE QUESTION…</p><h2>Me dis pas que tu ne connais même pas le terme de notre merveille ?!</h2><p>À quelle date notre petit trésor est-il censé pointer le bout de son nez ?</p><label for="termDate" style="display:block;margin:18px 0 8px;font-weight:600">Ta réponse :</label><input type="date" id="termDate" required style="display:block;width:100%;box-sizing:border-box;padding:13px;border:1px solid #8b253d;border-radius:6px;background:#fffaf5;color:#67283b;font-size:17px"><button type="button" id="termSubmit">Valider ma date →</button><p class="term-small">Attention… une mauvaise réponse pourrait te valoir le 3e prix !</p><p id="termFeedback" role="status" style="font-weight:bold;color:#8b253d"></p></section>`;
+ const submit=modal.querySelector('#termSubmit');
+ submit.onclick=async()=>{
+   const date=modal.querySelector('#termDate').value;
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){modal.querySelector('#termFeedback').textContent='Choisis une date avant de valider !';return}
+   const wrong=date!=='2027-01-01';
+   submit.disabled=true;
+   if(await submitVote({termUnknown:wrong,termDate:date})){
+     const feedback=modal.querySelector('#termFeedback');
+     feedback.textContent=wrong?'Purée, c’est le premier janvier ! 🎉 Tu remportes automatiquement le 3e prix : le changement de couche ! 🍼':'Bien joué ! Tu connais le terme de notre merveille ! 🎉';
+     submit.textContent='Voir mon bulletin Sherlock →';submit.disabled=false;
+     submit.onclick=()=>{modal.remove();showSherlockConfirmation()};
+   }else{submit.disabled=false}
+ };
+ modal.querySelector('#termDate').focus({preventScroll:true});
+}
 function renderWeight(){const total=data.weights.length;$('weightCount').textContent=total?total+' pronostic'+(total>1?'s':'')+' enregistré'+(total>1?'s':'')+'.':'Aucun pronostic pour l’instant.';const el=$('weightStats');if(!el)return;const mean=total?Math.round(data.weights.reduce((sum,x)=>sum+Number(x.weight),0)/total):null;const position=mean?Math.min(100,Math.max(0,(mean-1000)/50)):50;el.innerHTML='<div class="stat-eyebrow">Le poids moyen imaginé par les invités</div><div class="weight-stat"><strong>'+(mean?(mean/1000).toLocaleString('fr-FR',{minimumFractionDigits:3,maximumFractionDigits:3}):'—')+'</strong><span>kg</span></div><div class="weight-scale"><div class="weight-marker" style="left:'+position+'%"></div></div><div class="weight-range"><span>1 kg</span><span>6 kg</span></div><div class="stat-caption">'+(total?'Moyenne de '+total+' pronostic'+(total>1?'s':''):'La moyenne apparaîtra après le premier pari.')+'</div>'}
 const clues=[
 '« Je suis un prénom qui se glisse entre les pages d’un grand classique. »',
@@ -316,13 +330,16 @@ function showSherlockConfirmation(){
  const eyebrow=document.createElement('p');eyebrow.className='sherlock-eyebrow';eyebrow.textContent='LE GRAND PARI · VOTRE BULLETIN';
  const title=document.createElement('h2');title.id='sherlockTitle';title.textContent='Bravo Sherlock !';
  const message=document.createElement('p');message.textContent='Vos pronostics sont enregistrés. À très bientôt pour le résultat !';
+ if(myVote.termUnknown===true){
+  const prize=document.createElement('p');prize.className='term-prize';prize.textContent='🏆 Félicitations : 3e prix automatique ! Tu remportes le changement de couche ! 🍼';panel.appendChild(prize);
+ }
  const summary=document.createElement('p');summary.className='sherlock-summary';
  summary.textContent=myVote.sex+' · '+myVote.names.join(' · ')+' · '+Number(myVote.weight).toLocaleString('fr-FR')+' g';
  const close=document.createElement('button');close.type='button';close.textContent='Voir mon bulletin ↓';
  close.onclick=()=>{modal.remove();document.getElementById('gameTicket')?.scrollIntoView({behavior:'smooth',block:'center'})};
  const replay=document.createElement('button');replay.type='button';replay.className='sherlock-replay';replay.textContent='↻ Rejouer avec un autre participant';
  replay.onclick=()=>{modal.remove();window.dispatchEvent(new Event('start-new-game'))};
- panel.append(eyebrow,title,message,summary,close,replay);modal.appendChild(panel);
+ panel.prepend(eyebrow,title,message);panel.append(summary,close,replay);modal.appendChild(panel);
  close.focus({preventScroll:true});
 }
 window.addEventListener('resize',()=>{if(!overlay.hidden&&!scratched)paintScratch()});
@@ -354,15 +371,15 @@ function burst(){if(window.matchMedia('(prefers-reduced-motion: reduce)').matche
 ['enterGame','voteSex','addName','addWeight'].forEach(id=>document.getElementById(id)?.addEventListener('click',()=>setTimeout(status,0)));
 window.addEventListener('votes-updated',status);status();
 })();
-</script><div class="admin-backdrop" hidden="" id="adminModal"><section aria-label="Pilotage des pronostics" aria-modal="true" class="admin-panel" role="dialog"><button aria-label="Fermer" class="admin-close" id="adminClose">×</button><p class="admin-kicker">LE GRAND PARI · ACCÈS PRIVÉ</p><h2>Pilotage des pronostics</h2><div id="adminLogin"><p>Entrez le mot de passe administrateur pour voir qui a parié quoi.</p><form id="adminForm"><input autocomplete="current-password" id="adminPassword" placeholder="Mot de passe pilotage" required="" type="password"/><button type="submit">Accéder aux réponses →</button></form></div><div hidden="" id="adminContent"><div id="adminSummary"></div><div class="admin-actions"><button id="adminReload">Actualiser</button><button id="adminExport">Exporter CSV ↓</button><button id="adminLogout">Déconnexion</button></div><div class="admin-table-wrap"><table><thead><tr><th>Participant</th><th>Sexe</th><th>Prénom(s)</th><th>Poids</th><th>Dernière réponse</th></tr></thead><tbody id="adminRows"></tbody></table></div></div><p id="adminError" role="status"></p></section></div><script id="admin-script">(()=>{
+</script><div class="admin-backdrop" hidden="" id="adminModal"><section aria-label="Pilotage des pronostics" aria-modal="true" class="admin-panel" role="dialog"><button aria-label="Fermer" class="admin-close" id="adminClose">×</button><p class="admin-kicker">LE GRAND PARI · ACCÈS PRIVÉ</p><h2>Pilotage des pronostics</h2><div id="adminLogin"><p>Entrez le mot de passe administrateur pour voir qui a parié quoi.</p><form id="adminForm"><input autocomplete="current-password" id="adminPassword" placeholder="Mot de passe pilotage" required="" type="password"/><button type="submit">Accéder aux réponses →</button></form></div><div hidden="" id="adminContent"><div id="adminSummary"></div><div class="admin-actions"><button id="adminReload">Actualiser</button><button id="adminExport">Exporter CSV ↓</button><button id="adminLogout">Déconnexion</button></div><div class="admin-table-wrap"><table><thead><tr><th>Participant</th><th>Sexe</th><th>Prénom(s)</th><th>Poids</th><th>Terme / Prix</th><th>Dernière réponse</th></tr></thead><tbody id="adminRows"></tbody></table></div></div><p id="adminError" role="status"></p></section></div><script id="admin-script">(()=>{
 const $=id=>document.getElementById(id);let password='',rows=[];
 $('adminOpen').onclick=()=>{$('adminModal').hidden=false;document.body.classList.add('modal-open');$('adminPassword').focus()};
 function close(){$('adminModal').hidden=true;document.body.classList.remove('modal-open')}
 $('adminClose').onclick=close;$('adminModal').addEventListener('click',e=>{if(e.target===$('adminModal'))close()});
 function cell(row,val){const td=document.createElement('td');td.textContent=val;row.append(td)}
-async function fetchAdmin(){const res=await fetch('/api/admin',{headers:{'Authorization':'Bearer '+password},cache:'no-store'});const j=await res.json();if(!res.ok)throw Error(j.error||'Accès impossible');rows=j.votes;$('adminRows').replaceChildren();for(const v of rows){const tr=document.createElement('tr');cell(tr,v.who);cell(tr,v.sex||'—');cell(tr,(v.names||[]).join(', ')||'—');cell(tr,v.weight?v.weight+' g':'—');cell(tr,v.updatedAt?new Date(v.updatedAt).toLocaleString('fr-FR'):'—');$('adminRows').append(tr)}$('adminSummary').textContent=rows.length+' participant'+(rows.length>1?'s':'')+' enregistré'+(rows.length>1?'s':'');$('adminLogin').hidden=true;$('adminContent').hidden=false;$('adminError').textContent=''}
+async function fetchAdmin(){const res=await fetch('/api/admin',{headers:{'Authorization':'Bearer '+password},cache:'no-store'});const j=await res.json();if(!res.ok)throw Error(j.error||'Accès impossible');rows=j.votes;$('adminRows').replaceChildren();for(const v of rows){const tr=document.createElement('tr');cell(tr,v.who);cell(tr,v.sex||'—');cell(tr,(v.names||[]).join(', ')||'—');cell(tr,v.weight?v.weight+' g':'—');cell(tr,v.termDate?(v.termDate.split('-').reverse().join('/')+(v.termUnknown?' · 🏆 3e prix':' · Exact !')):'—');cell(tr,v.updatedAt?new Date(v.updatedAt).toLocaleString('fr-FR'):'—');$('adminRows').append(tr)}$('adminSummary').textContent=rows.length+' participant'+(rows.length>1?'s':'')+' enregistré'+(rows.length>1?'s':'');$('adminLogin').hidden=true;$('adminContent').hidden=false;$('adminError').textContent=''}
 $('adminForm').onsubmit=async e=>{e.preventDefault();password=$('adminPassword').value;try{await fetchAdmin()}catch(err){$('adminError').textContent=err.message}};
 $('adminReload').onclick=async()=>{try{await fetchAdmin()}catch(err){$('adminError').textContent=err.message}};
 $('adminLogout').onclick=()=>{password='';rows=[];$('adminPassword').value='';$('adminContent').hidden=true;$('adminLogin').hidden=false};
-$('adminExport').onclick=()=>{const fields=['Participant','Sexe','Prénoms','Poids (g)','Dernière réponse'];const esc=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const lines=[fields,...rows.map(v=>[v.who,v.sex||'',(v.names||[]).join(' / '),v.weight||'',v.updatedAt||''])];const blob=new Blob(['\ufeff'+lines.map(line=>line.map(esc).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pronostics-bebe.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+$('adminExport').onclick=()=>{const fields=['Participant','Sexe','Prénoms','Poids (g)','Terme inconnu / 3e prix','Dernière réponse'];const esc=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const lines=[fields,...rows.map(v=>[v.who,v.sex||'',(v.names||[]).join(' / '),v.weight||'',v.termDate?(v.termDate+(v.termUnknown?' · 3e prix':' · Exact')):'',v.updatedAt||''])];const blob=new Blob(['\ufeff'+lines.map(line=>line.map(esc).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pronostics-bebe.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 })();</script></body></html>
