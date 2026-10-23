@@ -35,3 +35,10 @@ La dependance @vercel/blob a ete mise a jour vers la version 2 pour utiliser get
 ## Connexion Vercel Blob avec OIDC (2026)
 
 Le stockage privé connecté au projet utilise OIDC. Aucune variable `BLOB_READ_WRITE_TOKEN` n’est nécessaire dans ce mode. Vérifier dans Storage > Projects que `babynouailhat` est connecté en Production, puis redéployer. Le SDK `@vercel/blob` v2 utilise les informations de connexion du déploiement. Ne pas créer de jeton manuel.
+
+
+## Correction affichage (23 octobre)
+Après une sauvegarde réussie, l'API renvoie les statistiques pour actualiser immédiatement le nuage des prénoms et la jauge de poids. Les erreurs d'enregistrement restent visibles 9 secondes et sont inscrites dans la console. Si les votes ne sont toujours pas visibles, consulter les Runtime Logs Vercel de /api/votes : un problème de permissions Blob ne peut pas être résolu par le seul affichage.
+
+
+Correction : le bulletin final est maintenant affiché et centré automatiquement après validation du poids (sans rechargement).
