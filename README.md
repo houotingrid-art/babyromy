@@ -4,7 +4,7 @@
 
 1. Décompressez ce ZIP et **remplacez les fichiers du dépôt GitHub** par son contenu (`index.html`, `api/`, `package.json`, `vercel.json`). Ne téléversez pas le ZIP lui-même dans GitHub.
 2. Dans Vercel, ouvrez votre projet `babynouailhat` et créez un **Blob Store privé** via Storage. Connectez-le au projet : Vercel crée normalement `BLOB_READ_WRITE_TOKEN`.
-3. Dans **Project → Settings → Environment Variables**, ajoutez `ADMIN_PASSWORD` avec un mot de passe long et unique (Production, Preview si souhaité). Ne le mettez jamais dans le code ou dans GitHub.
+3. Le pilotage est accessible via « ··· » avec le mot de passe **nouailhat**. Aucun réglage ADMIN_PASSWORD nécessaire. Attention : ce mot de passe est intégré au code du serveur et ne protège pas fortement les données.
 4. Redéployez le projet après les changements de variables (nouveau commit ou Redeploy).
 5. Ouvrez le site, entrez un nom et votez. Cliquez sur **···** dans la barre de navigation, saisissez le mot de passe : le tableau affiche les participants, leurs réponses et l'export CSV.
 
@@ -22,4 +22,4 @@
 
 ## Vérifications
 
-Dans Vercel, les variables doivent s'appeler exactement `BLOB_READ_WRITE_TOKEN` et `ADMIN_PASSWORD`. Si les votes échouent, regardez **Logs** pour la fonction `/api/votes`.
+Dans Vercel, les variables doivent s'appeler exactement `BLOB_READ_WRITE_TOKEN` uniquement. Si les votes échouent, regardez **Logs** pour la fonction `/api/votes`.
