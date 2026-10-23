@@ -26,3 +26,7 @@ Dans Vercel, les variables doivent s'appeler exactement `BLOB_READ_WRITE_TOKEN` 
 
 ## Correction accès pilotage
 Cette version corrige la lecture des fichiers Blob : l’API utilise désormais l’URL des blobs renvoyée par `list()` plutôt que leur chemin, qui provoquait l’erreur « The string did not match the expected pattern ». Le mot de passe reste `nouailhat`. Si le tableau ne charge pas, vérifier la connexion Blob et les logs de la fonction `/api/admin`.
+
+
+## Correction du 23 octobre
+La dependance @vercel/blob a ete mise a jour vers la version 2 pour utiliser get() avec les blobs prives. Redeployez depuis GitHub et verifiez que BLOB_READ_WRITE_TOKEN est configure.
