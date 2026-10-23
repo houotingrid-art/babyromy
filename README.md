@@ -52,3 +52,7 @@ Le prenom, le poids et le bulletin final se mettent a jour immediatement apres c
 - Les réponses confirmées restent affichées lors du rafraîchissement des statistiques.
 - Le bulletin final propose « Rejouer avec un autre participant ». Chaque nouvelle partie reçoit un nouvel identifiant ; les anciennes réponses restent enregistrées.
 - Pour éviter les doublons dans le pilotage, ne pas rejouer avec le même nom pour simuler une autre personne.
+
+
+## Correctif affichage immédiat
+Les prénoms, le poids et le bulletin Sherlock sont maintenant affichés dès le clic, puis confirmés par l'API. Si l'API refuse le vote, l'interface revient à l'état précédent et indique clairement l'erreur. Le bouton d'indices est mis en évidence.
