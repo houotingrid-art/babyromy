@@ -30,3 +30,8 @@ Cette version corrige la lecture des fichiers Blob : l’API utilise désormais 
 
 ## Correction du 23 octobre
 La dependance @vercel/blob a ete mise a jour vers la version 2 pour utiliser get() avec les blobs prives. Redeployez depuis GitHub et verifiez que BLOB_READ_WRITE_TOKEN est configure.
+
+
+## Connexion Vercel Blob avec OIDC (2026)
+
+Le stockage privé connecté au projet utilise OIDC. Aucune variable `BLOB_READ_WRITE_TOKEN` n’est nécessaire dans ce mode. Vérifier dans Storage > Projects que `babynouailhat` est connecté en Production, puis redéployer. Le SDK `@vercel/blob` v2 utilise les informations de connexion du déploiement. Ne pas créer de jeton manuel.

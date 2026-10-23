@@ -1,5 +1,5 @@
 import {readOne,readAll,writeOne,stats,error,safeId} from './_shared.js';
-export default async function handler(req,res){res.setHeader('Cache-Control','no-store');if(!process.env.BLOB_READ_WRITE_TOKEN)return error(res,503,'Stockage Blob non connecté : configurez BLOB_READ_WRITE_TOKEN dans Vercel.');try{
+export default async function handler(req,res){res.setHeader('Cache-Control','no-store');try{
 if(req.method==='GET'){const id=req.query.mine;const votes=await readAll();const mine=safeId(id)?votes.find(v=>v.id===id):null;return res.status(200).json({stats:stats(votes),mine:mine||null})}
 if(req.method!=='POST')return error(res,405,'Méthode non autorisée');const {id,who,sex,name,weight}=req.body||{};
 if(!safeId(id))return error(res,400,'Identifiant de participant invalide');if(typeof who!=='string'||who.trim().length<2||who.trim().length>60)return error(res,400,'Nom invalide');
