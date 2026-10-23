@@ -42,3 +42,7 @@ Après une sauvegarde réussie, l'API renvoie les statistiques pour actualiser i
 
 
 Correction : le bulletin final est maintenant affiché et centré automatiquement après validation du poids (sans rechargement).
+
+
+## Correctif affichage immediat
+Le prenom, le poids et le bulletin final se mettent a jour immediatement apres confirmation de l API. Les chargements plus anciens ne peuvent plus ecraser les nouveaux votes.

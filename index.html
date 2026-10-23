@@ -179,8 +179,54 @@ let saving=false;
 let toastTimer;function toast(msg){const el=$('toast');el.textContent=msg;el.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.display='none',9000)}
 function updateGate(){document.body.classList.toggle('locked',!identity);$('identityStatus').textContent=identity?'Bienvenue '+identity+' ! Vos paris sont ouverts.':'';if(identity)$('identityName').value=identity;}
 function refresh(){renderSex();renderNames();renderWeight();window.dispatchEvent(new Event('votes-updated'))}
-async function loadVotes({quiet=false}={}){try{const res=await fetch('/api/votes?mine='+encodeURIComponent(participantId),{cache:'no-store'});const j=await res.json();if(!res.ok)throw Error(j.error||'Erreur serveur');if(!j.stats||!Array.isArray(j.stats.names)||!Array.isArray(j.stats.weights)||!Array.isArray(j.stats.sex))throw Error('Réponse de statistiques invalide');data=j.stats;if(j.mine){myVote={sex:j.mine.sex||null,names:j.mine.names||[],weight:j.mine.weight||null,who:j.mine.who};identity=j.mine.who||identity;localStorage.setItem(KEY+'-identity',identity);updateGate()}refresh();return true}catch(e){console.error('Chargement des pronostics',e);if(!quiet)toast('Impossible de charger les pronostics : '+e.message);return false}}
-async function submitVote(patch){if(saving)return false;saving=true;try{const res=await fetch('/api/votes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:participantId,who:identity,...patch})});const j=await res.json();if(!res.ok)throw Error(j.error||'Échec de sauvegarde');if(!j.mine)throw Error('Réponse de sauvegarde invalide');myVote={sex:j.mine.sex||null,names:j.mine.names||[],weight:j.mine.weight||null,who:j.mine.who};if(j.stats&&Array.isArray(j.stats.names)&&Array.isArray(j.stats.weights)&&Array.isArray(j.stats.sex)){data=j.stats;refresh()}else{await loadVotes({quiet:true})}window.dispatchEvent(new Event('votes-updated'));toast('Pronostic enregistré !');return true}catch(e){console.error('Enregistrement du pronostic',e);toast('Vote NON enregistré : '+e.message);return false}finally{saving=false}}
+// A request started before a vote must never replace a newer vote in the UI.
+let voteRevision=0;
+function validStats(s){return s&&['sex','names','weights'].every(k=>Array.isArray(s[k]))}
+function sameName(a,b){return norm(String(a||''))===norm(String(b||''))}
+function ensureOwnVoteInStats(s,previous,current){
+ const result={sex:[...s.sex],names:[...s.names],weights:[...s.weights]};
+ // The Blob listing may lag a successful write; display the latest response immediately.
+ if(current.sex&&!previous.sex&&!result.sex.some(x=>x.choice===current.sex))result.sex.push({choice:current.sex});
+ for(const name of current.names||[]){
+  if(!(previous.names||[]).some(n=>sameName(n,name))&&!result.names.some(n=>sameName(n.name,name)))result.names.push({name});
+ }
+ if(current.weight&&current.weight!==previous.weight){
+  if(!result.weights.some(x=>Number(x.weight)===Number(current.weight)))result.weights.push({weight:current.weight});
+ }
+ return result;
+}
+async function loadVotes({quiet=false}={}){
+ const revision=voteRevision;
+ try{
+  const res=await fetch('/api/votes?mine='+encodeURIComponent(participantId),{cache:'no-store'});
+  const j=await res.json();if(!res.ok)throw Error(j.error||'Erreur serveur');
+  if(!validStats(j.stats))throw Error('Réponse de statistiques invalide');
+  if(revision!==voteRevision)return false;
+  data=j.stats;
+  if(j.mine){myVote={sex:j.mine.sex||null,names:j.mine.names||[],weight:j.mine.weight||null,who:j.mine.who};identity=j.mine.who||identity;localStorage.setItem(KEY+'-identity',identity);updateGate()}
+  refresh();return true;
+ }catch(e){console.error('Chargement des pronostics',e);if(!quiet)toast('Impossible de charger les pronostics : '+e.message);return false}
+}
+async function submitVote(patch){
+ if(saving)return false;
+ saving=true;voteRevision++;
+ const previous={sex:myVote.sex,names:[...(myVote.names||[])],weight:myVote.weight};
+ try{
+  const res=await fetch('/api/votes',{method:'POST',headers:{'Content-Type':'application/json'},cache:'no-store',body:JSON.stringify({id:participantId,who:identity,...patch})});
+  const j=await res.json();if(!res.ok)throw Error(j.error||'Échec de sauvegarde');if(!j.mine)throw Error('Réponse de sauvegarde invalide');
+  myVote={sex:j.mine.sex||null,names:j.mine.names||[],weight:j.mine.weight||null,who:j.mine.who};
+  if(validStats(j.stats))data=ensureOwnVoteInStats(j.stats,previous,myVote);
+  else {
+   data=ensureOwnVoteInStats(data,previous,myVote);
+  }
+  refresh(); // synchronous: cloud, weight and ticket update before showing success
+  toast('Pronostic enregistré !');
+  // Reconcile with the server later, without blocking the live display.
+  setTimeout(()=>loadVotes({quiet:true}),1500);
+  return true;
+ }catch(e){console.error('Enregistrement du pronostic',e);toast('Vote NON enregistré : '+e.message);return false}
+ finally{saving=false}
+}
 $('enterGame').onclick=()=>{const n=$('identityName').value.trim().replace(/\s+/g,' ');if(n.length<2)return toast('Indiquez votre prénom ou un surnom.');if(myVote.who&&myVote.who!==n)return toast('Ce navigateur a déjà un participant enregistré.');identity=n;localStorage.setItem(KEY+'-identity',identity);updateGate();$('sexe').scrollIntoView({behavior:'smooth'});};
 $('identityName').addEventListener('keydown',e=>{if(e.key==='Enter')$('enterGame').click()});
 let selected=null;document.querySelectorAll('[data-sex]').forEach(b=>b.addEventListener('click',()=>{if(!identity)return;selected=b.dataset.sex;document.querySelectorAll('[data-sex]').forEach(x=>x.classList.toggle('selected',x===b))}));
