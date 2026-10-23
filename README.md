@@ -56,3 +56,7 @@ Le prenom, le poids et le bulletin final se mettent a jour immediatement apres c
 
 ## Correctif affichage immédiat
 Les prénoms, le poids et le bulletin Sherlock sont maintenant affichés dès le clic, puis confirmés par l'API. Si l'API refuse le vote, l'interface revient à l'état précédent et indique clairement l'erreur. Le bouton d'indices est mis en évidence.
+
+
+## Correctif Sherlock
+Après la sauvegarde réussie du poids, une fenêtre Bravo Sherlock apparaît immédiatement avec le récapitulatif et le bouton Rejouer. Le récapitulatif reste aussi présent sur la page.
