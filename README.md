@@ -1,14 +1,25 @@
-# Le Grand Pari — site de naissance
+# Le grand pari — Vercel + Blob (Hobby)
 
-## Déploiement GitHub Pages
+## Installation
 
-1. Créer un dépôt GitHub (par exemple `le-grand-pari`).
-2. Décompresser cette archive et envoyer `index.html` et `.nojekyll` à la racine du dépôt.
-3. Dans **Settings > Pages**, choisir **Deploy from a branch**, puis **main** et **/(root)**.
-4. Le site sera accessible à l’adresse `https://VOTRE-PSEUDO.github.io/le-grand-pari/`.
+1. Décompressez ce ZIP et **remplacez les fichiers du dépôt GitHub** par son contenu (`index.html`, `api/`, `package.json`, `vercel.json`). Ne téléversez pas le ZIP lui-même dans GitHub.
+2. Dans Vercel, ouvrez votre projet `babynouailhat` et créez un **Blob Store privé** via Storage. Connectez-le au projet : Vercel crée normalement `BLOB_READ_WRITE_TOKEN`.
+3. Dans **Project → Settings → Environment Variables**, ajoutez `ADMIN_PASSWORD` avec un mot de passe long et unique (Production, Preview si souhaité). Ne le mettez jamais dans le code ou dans GitHub.
+4. Redéployez le projet après les changements de variables (nouveau commit ou Redeploy).
+5. Ouvrez le site, entrez un nom et votez. Cliquez sur **···** dans la barre de navigation, saisissez le mot de passe : le tableau affiche les participants, leurs réponses et l'export CSV.
 
-## À savoir
+## Fonctionnement
 
-Les images de l’illustration sont intégrées dans `index.html` : aucun fichier image séparé n’est requis.
-Les pronostics sont actuellement stockés dans le navigateur de chaque visiteur (localStorage) : GitHub Pages ne les partage pas entre les invités. Pour des résultats collectifs, il faudra connecter une base de données.
-La chanson n’est pas fournie. Le site peut rechercher `allons-voir.mp3` si vous possédez un fichier audio que vous avez le droit d’utiliser.
+- Les réponses sont enregistrées **côté serveur** dans Vercel Blob, un fichier JSON privé par navigateur/participant. Le bouton de pilotage est visible, mais ses données nécessitent le mot de passe.
+- Les jauges et le nuage de prénoms utilisent les réponses partagées. Actualisez la page pour récupérer les nouveaux votes des autres visiteurs.
+- Le navigateur garde un identifiant local : effacer ses données ou utiliser un autre navigateur crée une nouvelle participation. Ce n'est pas une protection forte contre les votes multiples.
+- Les participants peuvent voir les statistiques anonymisées, pas les noms des votants.
+- Le mot de passe administrateur est comparé côté serveur, jamais exposé au navigateur autrement que pendant la demande d'accès. Utilisez HTTPS (Vercel le fournit).
+- L'API relit les fichiers pour calculer les statistiques : solution adaptée à une **petite fête privée** et aux quotas Hobby, pas à un site très fréquenté.
+- Les requêtes d'écriture simultanées sur un même identifiant peuvent se concurrencer ; les participants utilisent normalement une seule session à la fois.
+- La limite gratuite dépend des quotas Vercel en vigueur. Vérifiez l'onglet Usage du compte.
+- Le fichier `allons-voir.mp3` est optionnel : la musique ne se jouera que si vous l'ajoutez à la racine.
+
+## Vérifications
+
+Dans Vercel, les variables doivent s'appeler exactement `BLOB_READ_WRITE_TOKEN` et `ADMIN_PASSWORD`. Si les votes échouent, regardez **Logs** pour la fonction `/api/votes`.
