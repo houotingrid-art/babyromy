@@ -78,3 +78,6 @@ Un seul indice à gratter, volontairement énigmatique, sans référence littér
 
 
 Automatic saving: sex on selection, name and weight on completed input, date on selection.
+
+
+Validation unique : tous les pronostics sont saisis puis enregistres avec le bouton final.
