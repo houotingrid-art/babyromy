@@ -75,3 +75,6 @@ Après validation de la date et enregistrement confirmé, la fenêtre « Bravo S
 
 ## Indice unique
 Un seul indice à gratter, volontairement énigmatique, sans référence littéraire explicite.
+
+
+Automatic saving: sex on selection, name and weight on completed input, date on selection.
