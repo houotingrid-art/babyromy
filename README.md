@@ -67,3 +67,11 @@ Après la validation du poids, une question sur la connaissance du terme appara�
 
 ## Question du terme
 Après le poids, le participant doit saisir une date. Le 1er janvier 2027 est la bonne réponse. Une autre date déclenche le 3e prix automatique, et la date est enregistrée dans Blob et visible dans Pilotage.
+
+
+## Correction dernière question
+Après validation de la date et enregistrement confirmé, la fenêtre « Bravo Sherlock ! » s'ouvre automatiquement après 1,3 seconde, sans second clic. Le bouton Rejouer est présent dans cette fenêtre.
+
+
+## Indice unique
+Un seul indice à gratter, volontairement énigmatique, sans référence littéraire explicite.
